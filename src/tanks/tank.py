@@ -15,10 +15,10 @@ class TankBase():
 
   def clampAction(self, val, val_name, min_val=-1, max_val=1):
     if val > max_val:
-      logging.warning("Received '{0}' for {1}, should be less than {2}".format(val, val_name max_val))
+      logging.warning("Received '{0}' for {1}, should be less than {2}".format(val, val_name, max_val))
       return max_val
     elif val < min_val:
-      logging.warning("Received '{0}' for {1}, should be greater than {2}".format(val, val_name min_val))
+      logging.warning("Received '{0}' for {1}, should be greater than {2}".format(val, val_name, min_val))
       return min_val
     else:
       return val
@@ -32,7 +32,7 @@ class TankBase():
       self.socket.sendall("obv".encode("utf-8"))
       obv_str = self.socket.recv(BUFFER_SIZE).decode("utf-8") # first observation
       obv = json.loads(obv_str)
-      while winner is not None:
+      while winner is None:
         move, turn = self.action(obv)
         move = self.clampAction(move, "movement")
         turn = self.clampAction(turn, "turn")
@@ -50,12 +50,14 @@ class TankBase():
       raise e
     finally:
       self.socket.close()
+    
     return winner
+
   def action(self, obv):
     raise NotImplementedError()
 
 class SimpleTank(TankBase):
   def __init__(self, action_func, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    
+
     self.action = action_func
