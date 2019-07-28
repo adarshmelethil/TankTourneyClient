@@ -6,7 +6,12 @@ import json
 BUFFER_SIZE = 1024
 
 class TankBase():
-  def __init__(self, player_num=1, port=26000, game_addr="127.0.0.1"):
+  def __init__(self, player_num, port=26000, game_addr="127.0.0.1", logger=None):
+    self.logger = logger
+    if not self.logger:
+      self.logger = logging.getLogger(__name__)
+      logger.setLevel(logging.INFO)
+
     self.port = port
     self.player_num = player_num
     self.game_addr = game_addr
@@ -15,10 +20,10 @@ class TankBase():
 
   def clampAction(self, val, val_name, min_val=-1, max_val=1):
     if val > max_val:
-      logging.warning("Received '{0}' for {1}, should be less than {2}".format(val, val_name, max_val))
+      self.logger.warning("Received '{0}' for {1}, should be less than {2}".format(val, val_name, max_val))
       return max_val
     elif val < min_val:
-      logging.warning("Received '{0}' for {1}, should be greater than {2}".format(val, val_name, min_val))
+      self.logger.warning("Received '{0}' for {1}, should be greater than {2}".format(val, val_name, min_val))
       return min_val
     else:
       return val
