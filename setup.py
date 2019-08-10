@@ -4,7 +4,7 @@ from os import environ
 
 setup(
   name="TankTourneyClient",
-  version="0.0.1",
+  version="0.0.3",
   package_dir={"": "src"},
   packages=find_packages("src"),
   include_package_data=True,
