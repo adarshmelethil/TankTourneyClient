@@ -56,10 +56,12 @@ class TankBase():
     import time
     try:
       # Initial action used to contact server to get first observation
-      obv = self.actionToString(0, 0, 0)
+      move, turn, fire = 0, 0, 0
+      obv = None
       while winner is None:
         # Take action
-        move, turn, fire = self.action(obv)
+        if obv:
+          move, turn, fire = self.action(obv)
         action_msg = self.actionToString(move, turn, fire)
         self.ctrl_socket.sendto(bytearray(action_msg, 'utf8'), self.ctrl_addr)
 
