@@ -56,18 +56,20 @@ class TankBase():
     import time
     try:
       # Initial action used to contact server to get first observation
-      move, turn, fire = 0, 0, 0
+      move, turn, fire = 0, 0, 0 # first action to get first observation
       obv = None
       while winner is None:
-        # Take action
+        action_msg = ""
         if obv:
-          move, turn, fire = self.action(obv)
-        action_msg = self.actionToString(move, turn, fire)
+          act = self.action(obv)
+          if act is not None:
+            move, turn, fire = act
+            action_msg = self.actionToString(move, turn, fire)
         self.ctrl_socket.sendto(bytearray(action_msg, 'utf8'), self.ctrl_addr)
 
         # Wait for observation
         obv_data, server_addr = self.ctrl_socket.recvfrom(self.OBV_BYTE_SIZE)
-        eprint("Obv: '{}' bytes".format(len(obv_data)))
+        # eprint("Obv: '{}' bytes".format(len(obv_data)))
         obv = json.loads(obv_data)
 
         if obv is not None and "winner" in obv:
