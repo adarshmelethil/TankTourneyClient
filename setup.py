@@ -8,5 +8,7 @@ setup(
   package_dir={"": "src"},
   packages=find_packages("src"),
   include_package_data=True,
-  install_requires=[],
+  install_requires=[
+    "docopt==0.6.2"
+  ],
 )

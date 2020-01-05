@@ -1,96 +1,80 @@
-import sys
-import socket
-import json
+import time
 
-BUFFER_SIZE = 1024
+from collections.abc import Iterable
+from threading import Thread
 
-class TankBase():
-  def __init__(self, player_num, control_port=26000, obv_port=27000, game_addr="127.0.0.1", retry_count=10):
+'''
+Vehicle pattern from Donkeycar
+https://github.com/autorope/donkeycar/blob/dev/donkeycar/vehicle.py
+'''
 
-    self.ctrl_addr = (game_addr, control_port+player_num)
-    self.ctrl_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+class Tank():
+  def __init__(self):
+    self.datastore = {}
+    self.parts = []
+    self.on = False
 
-    self.obv_addr = (game_addr, obv_port+player_num)
-    self.obv_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  def add(self, part, inputs=[], outputs=[], threaded=False):
+    part_info = {
+      "part": part,
+      "inputs": inputs,
+      "outputs": outputs,
+    }
+    if threaded:
+      part_info["thread"] = Thread(target=part.threadLoop, args=())
+      part_info["thread"].daemon = True
 
-    self.RETRY_COUNT = retry_count
-    self.OBV_BYTE_SIZE = 2048
+    self.parts.append(part_info)
 
-  def getObservation():
-    obv = {}
-    for _ in range(self.RETRY_COUNT):
-      try:
-        sock.sendto(b'obv', addr)
-        # Send data
-        obv_data, server_addr = sock.recvfrom(BYTE_SIZE)
-        obv = json.loads(obv_data)
-
-      except socket.timeout as sto:
-        eprint("Timeout: {}".format(sto), )
-      finally:
-        sock.close()
-
-      if obv is not None:
-        return obv
-
-  def clampAction(self, val, val_name, min_val=-1, max_val=1):
-    if val > max_val:
-      eprint("Received '{0}' for {1}, should be less than {2}".format(val, val_name, max_val))
-      return max_val
-    elif val < min_val:
-      eprint("Received '{0}' for {1}, should be greater than {2}".format(val, val_name, min_val))
-      return min_val
-    else:
-      return val
-
-  def actionToString(self, move, turn, fire):
-    move = self.clampAction(move, "movement")
-    turn = self.clampAction(turn, "turn")
-    fire = self.clampAction(fire, "fire")
-
-    return "{:.4f},{:.4f},{:.4f}".format(move, turn, fire)
-
-
-  def run(self):
-    winner = None
-    import time
+  def start(self, rate_hz=10, verbose=False):
     try:
-      # Initial action used to contact server to get first observation
-      move, turn, fire = 0, 0, 0 # first action to get first observation
-      obv = None
-      while winner is None:
-        action_msg = ""
-        if obv:
-          act = self.action(obv)
-          if act is not None:
-            move, turn, fire = act
-            action_msg = self.actionToString(move, turn, fire)
-        self.ctrl_socket.sendto(bytearray(action_msg, 'utf8'), self.ctrl_addr)
+      self.on = True
 
-        # Wait for observation
-        obv_data, server_addr = self.ctrl_socket.recvfrom(self.OBV_BYTE_SIZE)
-        # eprint("Obv: '{}' bytes".format(len(obv_data)))
-        obv = json.loads(obv_data)
+      self.startThreadedParts()
+      while self.on:
+        start_time = time.time()
+        self.updateParts()
 
-        if obv is not None and "winner" in obv:
-          winner = obv["winner"]
-          break
+        sleep_time = 1.0 / rate_hz - (time.time() - start_time)
+        if sleep_time > 0.0:
+          time.sleep(sleep_time)
+        else:
+          if verbose:
+            print('WARN::Vehicle: jitter violation in vehicle loop '
+                  'with {0:4.0f}ms'.format(abs(1000 * sleep_time)))
 
-    except Exception as e:
-      raise e
+    except KeyboardInterrupt:
+      pass
     finally:
-      self.ctrl_socket.close()
-    
-    return winner
+      self.stop()
 
-  def action(self, obv):
-    raise NotImplementedError()
+  def stop(self):
+    for part in self.parts:
+      try:
+          part['part'].shutdown()
+      except AttributeError:
+          pass
+      except Exception as e:
+          print(e)
 
-class SimpleTank(TankBase):
-  def __init__(self, action_func, *args, **kwargs):
-    super().__init__(*args, **kwargs)
+  def getData(self, *keys):
+    if isinstance(keys, Iterable):
+      return [self.datastore.get(key) for key in keys]
+    return [self.datastore.get(keys)]
 
-    self.action = action_func
+  def putData(self, **kwargs):
+    self.datastore.update(kwargs)
 
-def eprint(*args, **kwargs):
-  print(*args, file=sys.stderr, **kwargs)
+  def startThreadedParts(self):
+    for part in self.parts:
+      if "thread" in part:
+        part["thread"].start()
+  def updateParts(self):
+    for part in self.parts:
+      part_outputs = part['part'].update(*self.getData(*part["inputs"]))
+      if part_outputs is not None:
+        if not isinstance(part_outputs, Iterable):
+          part_outputs = [part_outputs]
+        self.putData(**dict(zip(part["outputs"], part_outputs)))
+
+
