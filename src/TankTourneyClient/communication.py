@@ -22,6 +22,7 @@ class ControllerPart:
       "fire": clampValue(fire, min_val=0),
     })
     # print(f"Sending: {data}", file=sys.stderr)
+    # print(f"Data: {data}")
     self.ctrl_socket.sendto(bytearray(data, 'utf8'), self.ctrl_addr)
 
 
@@ -40,15 +41,16 @@ class ObservationPart:
     self.on = True
 
   def observationDictToList(self):
+    # (F)lag, (L)idar, (D)istance(T)ravelled, (A)ngle(T)urned, (P)aused
     data_keys = ["F", "L", "DT", "AT", "P"]
     return [self.observation_data.get(k) for k in data_keys]
   
   def debugObvDictToList(self):
-    debug_keys = ["Pos", "Dir", "Obs"]
+    debug_keys = ["Pos", "Edges", "Obs"]
     return [self.observation_data.get(k) for k in debug_keys]
 
   def update(self):
-    print(self.observation_data.keys())
+    # print(self.observation_data.keys())
     return self.observationDictToList() + self.debugObvDictToList()
 
   def threadLoop(self):
