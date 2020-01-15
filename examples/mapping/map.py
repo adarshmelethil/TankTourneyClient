@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''
 Usage:
-  Random.py (1|2)
+  main.py (1|2)
 '''
 from docopt import docopt
 import sys
@@ -10,7 +10,7 @@ from random import uniform
 import time
 import pprint
 
-from display import Display
+from TankTourneyClient import DebugDisplayPart
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -32,7 +32,7 @@ def main(player_number):
 
   tank.add(ControllerPart(player_number), inputs=["rnd/fwd", "rnd/turn", "rnd/fire"])
 
-  tank.add(Display(), inputs=["debug/position", "debug/edges", "debug/obstacles"])
+  tank.add(DebugDisplayPart(), inputs=["debug/position", "debug/edges", "debug/obstacles"])
 
 
   tank.start(rate_hz=1)
