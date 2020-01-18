@@ -43,7 +43,7 @@ class DebugDisplayPart():
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         self.running = False
-
+        break
     pygame.display.update()
 
   def unityValToPy(self, val, offset):

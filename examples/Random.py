@@ -26,16 +26,9 @@ def main(player_number):
     outputs=["flag", "lidar", "distanceTravelled", "angleTurned", "paused", "debug/position", "debug/direction", "debug/edges", "debug/obstacles"],
     threaded=True)
 
-  def prettyPrint(*args):
-    print(f"{', '.join(map(str, args))}")
-  tank.add(LambdaPart(prettyPrint), inputs=["debug/position", "debug/direction"])
-
-  def printObv(obv):
-    print(type(obv))
-    if type(obv) is None:
-      print(len(obv))
-      print(obv[0])
-  tank.add(LambdaPart(printObv), inputs=["debug/obstacles"])
+  # def prettyPrint(*args):
+  #   print(f"{', '.join(map(str, args))}")
+  # tank.add(LambdaPart(prettyPrint), inputs=["debug/position", "debug/direction"])
 
   def writeTofile(position, direction, edges, obstacles):
     if None in [position, direction, obstacles]:
